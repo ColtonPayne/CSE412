@@ -1,4 +1,4 @@
-
+# Coded by Shawn de Jesus
 
 import base64
 import datetime
@@ -21,13 +21,13 @@ class SpotifyAPI(object):
         self.client_secret = client_secret
 
     def get_client_credentials(self):
-        #Returns a base64 encoded string
+        # Returns a base64 encoded string
         client_id = self.client_id
         client_secret = self.client_secret
-        
+
         if client_secret == None or client_id == None:
-            raise Exception("You must set client_id and client_secret")
-        
+            raise Exception("client_id and client_secret missing")
+
         client_creds = f"{client_id}:{client_secret}"
         client_creds_b64 = base64.b64encode(client_creds.encode())
         return client_creds_b64.decode()
@@ -51,11 +51,11 @@ class SpotifyAPI(object):
         if r.status_code not in range(200, 299):
             raise Exception("Authentication failed.")
             # technically ends up false
-            
+
         data = r.json()
         now = datetime.datetime.now()
         access_token = data['access_token']
-        expires_in = data['expires_in']  # secs
+        expires_in = data['expires_in']  # in seconds
         expires = now + datetime.timedelta(seconds=expires_in)
         self.access_token = access_token
         self.access_token_expires = expires
@@ -85,7 +85,7 @@ class SpotifyAPI(object):
         endpoint = f"https://api.spotify.com/{version}/{resource_type}/{lookup_id}"
         headers = self.get_resource_header()
         r = requests.get(endpoint, headers=headers)
-        
+
         if r.status_code not in range(200, 299):
             return {}
         return r.json()
@@ -101,39 +101,73 @@ class SpotifyAPI(object):
         endpoint = "https://api.spotify.com/v1/search"
         lookup_url = f"{endpoint}?{query_params}"
         r = requests.get(lookup_url, headers=headers)
-        
+
         if r.status_code not in range(200, 299):
             return {}
         return r.text
-
+    
+    # Main Search Function
     def search(self, query=None, operator=None, operator_query=None, search_type='artist'):
         if query == None:
             raise Exception("Query missing")
-        
+
         if isinstance(query, dict):
             query = " ".join([f"{k}:{v}" for k, v in query.items()])
-            
+
         if operator != None and operator_query != None:
             if operator.lower() == "or" or operator.lower() == "not":
                 operator = operator.upper()
                 if isinstance(operator_query, str):
                     query = f"{query} {operator} {operator_query}"
-        
-        query_params = urlencode({"q": query, "type": search_type.lower(),"limit":"1"})
-        #print(query_params)
+
+        query_params = urlencode(
+            {"q": query, "type": search_type.lower(), "limit": "1"})
+        # print(query_params)
         return self.base_search(query_params)
 
+    # Get Audio Features json data using track ID as argument
+    # Requires use of get_TrackID for "id" argument
+    def get_audioFeat(self, id):  # type
+        headers = self.get_resource_header()
+        endpoint = "https://api.spotify.com/v1/audio-features"
+        lookup_url = f"{endpoint}/{id}"
+        r = requests.get(lookup_url, headers=headers)
 
+        if r.status_code not in range(200, 299):
+            return {}
+        return r.text
+
+    # Gets track image url
+    # Just give it Song name for query
+    def get_image(self, query=None):
+        data = self.search(query=query, search_type='track')
+        jdata = json.loads(data)
+        return jdata["tracks"]["items"][0]["album"]["images"][1]["url"]
+    
+    # Gets track song url
+    # Just give it Song name for query
+    def get_Song(self, query=None):
+        data = self.search(query=query, search_type='track')
+        jdata = json.loads(data)
+        return jdata["tracks"]["items"][0]["external_urls"]["spotify"]
+
+    # Gets track ID
+    # Just give it Song name for query
+    def get_trackID(self, query=None):
+        data = self.search(query=query, search_type='track')
+        jdata = json.loads(data)
+        return jdata["tracks"]["items"][0]["id"]
+
+# Shawn's Client info for Spotify API account
 client_id = '8b4b0c15be434dcb8ce52f4b557a3d19'
 client_secret = 'a90c9e3b502f4c2089da0d0d93209240'
 
+# TESTING AREA
+"""
 spotify = SpotifyAPI(client_id=client_id, client_secret=client_secret)
-x = spotify.search(query='car crash eaJ', search_type='track')
-y = json.loads(x)
+print(spotify.get_trackID("Car Crash eaJ"))
+print(spotify.get_audioFeat(spotify.get_trackID("Car Crash eaJ")))
 
-#print(y.keys())
-print(y)
-print(y["tracks"]["items"][0]["album"]["images"][0]["url"])
+"""
 
 
-#https://towardsdatascience.com/extracting-song-data-from-the-spotify-api-using-python-b1e79388d50
