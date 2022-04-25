@@ -105,9 +105,9 @@ class SpotifyAPI(object):
         if r.status_code not in range(200, 299):
             return {}
         return r.text
-    
+
     # Main Search Function
-    def search(self, query=None, operator=None, operator_query=None, search_type='artist'):
+    def search(self, query=None, operator=None, operator_query=None, market=None, search_type='track'):
         if query == None:
             raise Exception("Query missing")
 
@@ -119,9 +119,12 @@ class SpotifyAPI(object):
                 operator = operator.upper()
                 if isinstance(operator_query, str):
                     query = f"{query} {operator} {operator_query}"
-
-        query_params = urlencode(
-            {"q": query, "type": search_type.lower(), "limit": "1"})
+        if market == None:
+            query_params = urlencode(
+                {"q": query, "type": search_type.lower(), "limit": "1"})
+        else:
+            query_params = urlencode(
+                {"q": query, "type": search_type.lower(), "limit": "1", 'market': market})
         # print(query_params)
         return self.base_search(query_params)
 
@@ -143,7 +146,7 @@ class SpotifyAPI(object):
         data = self.search(query=query, search_type='track')
         jdata = json.loads(data)
         return jdata["tracks"]["items"][0]["album"]["images"][1]["url"]
-    
+
     # Gets track song url
     # Just give it Song name for query
     def get_Song(self, query=None):
@@ -158,6 +161,27 @@ class SpotifyAPI(object):
         jdata = json.loads(data)
         return jdata["tracks"]["items"][0]["id"]
 
+    def get_podcastURL(self, query=None, market="US", type="show"):
+        data = self.search(query=query, market=market, search_type=type)
+        jdata = json.loads(data)
+        return jdata["shows"]["items"][0]["external_urls"]["spotify"]
+
+    def get_podcastImage(self, query=None, market="US", type="show"):
+        data = self.search(query=query, market=market, search_type=type)
+        jdata = json.loads(data)
+        return jdata["shows"]["items"][0]["images"][1]["url"]
+
+    def get_podcastEpCount(self, query=None, market="US", type="show"):
+        data = self.search(query=query, market=market, search_type=type)
+        jdata = json.loads(data)
+        return jdata["shows"]["items"][0]["total_episodes"]
+
+    def get_podcastDesc(self, query=None, market="US", type="show"):
+        data = self.search(query=query, market=market, search_type=type)
+        jdata = json.loads(data)
+        return jdata["shows"]["items"][0]["description"]
+
+
 # Shawn's Client info for Spotify API account
 client_id = '8b4b0c15be434dcb8ce52f4b557a3d19'
 client_secret = 'a90c9e3b502f4c2089da0d0d93209240'
@@ -169,5 +193,10 @@ print(spotify.get_trackID("Car Crash eaJ"))
 print(spotify.get_audioFeat(spotify.get_trackID("Car Crash eaJ")))
 
 """
-
-
+"""
+spotify = SpotifyAPI(client_id=client_id, client_secret=client_secret)
+print(spotify.get_podcastDesc("waffle makers")) // description
+print(spotify.get_podcastImage("waffle makers")) // image url
+print(spotify.get_podcastURL("waffle makers"))  // link to actual podcast show
+print(spotify.get_podcastEpCount("waffle makers")) // 48 
+"""
