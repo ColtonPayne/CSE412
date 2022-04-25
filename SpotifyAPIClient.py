@@ -180,6 +180,12 @@ class SpotifyAPI(object):
         data = self.search(query=query, market=market, search_type=type)
         jdata = json.loads(data)
         return jdata["shows"]["items"][0]["description"]
+    
+    # true or false value for if content is explicit
+    def get_podcastExplicit(self, query=None, market="US", type="show"):
+        data = self.search(query=query, market=market, search_type=type)
+        jdata = json.loads(data)
+        return jdata["shows"]["items"][0]["explicit"]
 
 
 # Shawn's Client info for Spotify API account
