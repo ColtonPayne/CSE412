@@ -14,7 +14,7 @@ sg.theme('SandyBeach')
 DB_HOST = "localhost"
 DB_NAME = "DemoDb"
 DB_USER = "postgres"
-DB_PASS = "13Mike?LimaKilo" #Redacted
+DB_PASS =  #Redacted
 
 
 conn = psycopg2.connect(dbname = DB_NAME, user= DB_USER, password = DB_PASS, host = DB_HOST)
